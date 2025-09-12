@@ -1,25 +1,25 @@
 # this is the azure infra code
 module "resource_group" {
-  source = "../Child_Modules/Azurerm_Resource_Group"
+  source = "../../Modules/Azurerm_Resource_Group"
 
   resource_group_name = "shinedev-rg"
   location            = "Central India"
 
 }
-module "storage_account" {
-  source     = "../Child_Modules/Azurerm_Storage_Account"
-  depends_on = [module.resource_group]
+# module "storage_account" {
+#   source     = "../../Modules/Azurerm_Storage_Account"
+#   depends_on = [module.resource_group]
 
-  storage_account_name     = "shinedevstg"
-  resource_group_name      = "shinedev-rg"
-  location                 = "Central India"
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
+#   storage_account_name     = "shinedevstg"
+#   resource_group_name      = "shinedev-rg"
+#   location                 = "Central India"
+#   account_tier             = "Standard"
+#   account_replication_type = "LRS"
 
-}
+# }
 
 module "virtual_network" {
-  source = "../Child_Modules/Azurerm_Virtual_Networks"
+  source = "../../Modules/Azurerm_Virtual_Networks"
 
   depends_on = [module.resource_group]
 
@@ -31,7 +31,7 @@ module "virtual_network" {
 }
 
 module "frontend_subnet" {
-  source = "../Child_Modules/Azurerm_Subnets"
+  source = "../../Modules/Azurerm_Subnets"
 
   depends_on = [module.virtual_network]
 
@@ -43,7 +43,7 @@ module "frontend_subnet" {
 
 module "shine1_vm" {
 
-  source = "../Child_Modules/Azurerm_Virtual_Machine"
+  source = "../../Modules/Azurerm_Virtual_Machine"
 
   depends_on = [module.virtual_network, module.frontend_subnet]
 
@@ -63,7 +63,7 @@ module "shine1_vm" {
 }
 module "shine2_vm" {
 
-  source = "../Child_Modules/Azurerm_Virtual_Machine"
+  source = "../../Modules/Azurerm_Virtual_Machine"
 
   depends_on = [module.virtual_network, module.frontend_subnet]
 
@@ -85,11 +85,49 @@ module "shine2_vm" {
 
 
 module "lb_public_ip" {
-  source     = "../Child_Modules/Azurerm_Public_IP"
+  source     = "../../Modules/Azurerm_Public_IP"
   depends_on = [module.resource_group]
 
   public_ip_name      = "shinelbpip"
   resource_group_name = "shinedev-rg"
   location            = "Central India"
   allocation_method   = "Static"
+}
+
+module "load_balancer" {
+  source = "../../Modules/Azurerm_Load_Balancer"
+
+  depends_on = [module.lb_public_ip, module.frontend_subnet]
+
+  lb_name                      = "shinelb"
+  location                     = "Central India"
+  public_ip_name               = "shinelbpip"
+  resource_group_name          = "shinedev-rg"
+  lb_backend_address_pool_name = "shinelbbackendpool"
+  
+}
+module "shine1_nic_lb_bpool_association" {
+  source = "../../Modules/Azurerm_lb_Nic_BPool_association"
+
+  depends_on = [module.shine1_vm, module.load_balancer]
+
+  nic_name                     = "shinefrontnic1"
+  resource_group_name          = "shinedev-rg"
+  lb_name                      = "shinelb"
+  lb_backend_address_pool_name = "shinelbbackendpool"
+  ip_configuration_name        = "internal"
+  
+}
+
+module "shine2_nic_lb_bpool_association" {
+  source = "../../Modules/Azurerm_lb_Nic_BPool_association"
+
+  depends_on = [module.shine2_vm, module.load_balancer]
+
+  nic_name                     = "shinefrontnic2"
+  resource_group_name          = "shinedev-rg"
+  lb_name                      = "shinelb"
+  lb_backend_address_pool_name = "shinelbbackendpool"
+  ip_configuration_name        = "internal"
+  
 }
