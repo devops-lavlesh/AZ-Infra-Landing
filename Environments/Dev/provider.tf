@@ -10,8 +10,8 @@ terraform {
   }
   backend "azurerm" {
     subscription_id      = "a60aa6b9-597f-4824-8c46-46d7412439d3"
-    resource_group_name  = "shineremote-rg"
-    storage_account_name = "shineremotestg"
+    resource_group_name  = "infrargdev"
+    storage_account_name = "infrastgdevo"
     container_name       = "tfstate"
     key                  = "dev.terraform.tfstate"
 
